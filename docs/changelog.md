@@ -42,6 +42,45 @@ All pre-validation documents complete. Validation ready to execute. No applicati
 
 ---
 
+## 2026-06-25 — Sprint 1: Foundation
+
+### Added — Application Code (first code in the project)
+
+**Project scaffold:**
+- `pyproject.toml` — Python 3.11, dependencies: FastAPI, Celery, SQLAlchemy, Alembic, Pydantic, httpx, Google APIs, Anthropic SDK; dev extras: pytest, ruff, mypy
+- `Dockerfile` — Python 3.11-slim image
+- `docker-compose.yml` — PostgreSQL 15, Redis 7, API service, Celery worker
+- `.env.example` — all required environment variables documented
+
+**Database:**
+- `app/db/models.py` — SQLAlchemy ORM models: `Workspace`, `User`, `Site`, `Page`, `PageAnalysis`
+- `app/db/session.py` — async SQLAlchemy session factory; `get_db()` FastAPI dependency
+- `alembic/` — Alembic migrations setup
+- `alembic/versions/0001_initial_schema.py` — initial migration: all 5 core tables with indexes
+
+**Provider abstraction layer (permanent architectural rule):**
+- `app/providers/base/crawler.py` — `CrawlerProvider` ABC + `CrawlResult` + `CrawlError`
+- `app/providers/base/search_data.py` — `SearchDataProvider` ABC + `SerpResult` + `BacklinkMetrics` + `SearchDataError`
+- `app/providers/base/llm.py` — `LLMProvider` ABC + `LLMMessage` + `ToolDefinition` + `LLMResponse` + `LLMError`
+- `app/providers/base/gsc.py` — `GSCProvider` ABC + `GSCPageMetrics` + `GSCProperty` + `GSCAuthUrl` + `GSCError`
+
+**Provider implementations:**
+- `app/providers/implementations/firecrawl.py` — `FirecrawlCrawlerProvider`
+- `app/providers/implementations/dataforseo.py` — `DataForSEOSearchDataProvider`
+- `app/providers/implementations/anthropic.py` — `AnthropicLLMProvider`
+- `app/providers/implementations/google_gsc.py` — `GoogleGSCProvider`
+- `app/providers/registry.py` — config-driven LRU-cached provider singletons
+
+**API and worker:**
+- `app/main.py`, `app/api/v1/health.py`, `app/api/v1/gsc.py`, `app/worker/celery_app.py`
+
+**Tests:** 5/5 pass (provider abstraction contracts + health endpoint)
+
+### Status
+Sprint 1 complete. No business logic anywhere. Sprint 2 (analysis pipeline) can begin.
+
+---
+
 ## 2026-06-25 (continued)
 
 ### Added / Updated — Dual-Mode Architecture

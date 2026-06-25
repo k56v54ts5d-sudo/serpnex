@@ -1,7 +1,7 @@
 # Progress
 
-Current phase: **Pre-implementation — Validation Ready**  
-Last updated: 2026-06-24
+Current phase: **Sprint 1 complete — Sprint 2 ready**  
+Last updated: 2026-06-25
 
 ---
 
@@ -39,9 +39,26 @@ Last updated: 2026-06-24
 
 ---
 
+## Sprint 1 — Complete (2026-06-25)
+
+**Foundation — infrastructure only, no business logic.**
+
+- Project scaffold: FastAPI + Celery + PostgreSQL + Redis + Docker Compose
+- Database schema: `workspaces`, `users`, `sites`, `pages`, `page_analyses` (Alembic migration 0001)
+- Provider abstraction layer: 4 ABCs (`CrawlerProvider`, `SearchDataProvider`, `LLMProvider`, `GSCProvider`)
+- Provider implementations: Firecrawl, DataForSEO, Anthropic, Google GSC
+- Provider registry: config-driven, LRU-cached singletons
+- API: `GET /health`, `GET /auth/gsc/connect`, `GET /auth/gsc/callback`
+- Celery worker: configured, no tasks registered yet
+- Tests: 5/5 pass
+
+**Architectural rule locked:** business logic never imports a concrete provider directly.
+
+---
+
 ## In Progress
 
-- Validation execution: all documents ready, awaiting evaluator to begin
+- Sprint 2: Analysis pipeline (analysis orchestrator, state machine, data collection workers, LLM workers, SSE)
 
 ---
 
