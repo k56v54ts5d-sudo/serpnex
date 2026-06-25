@@ -10,7 +10,7 @@ class AnthropicLLMProvider(LLMProvider):
     def __init__(self, api_key: str) -> None:
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY is not configured")
-        self._client = anthropic.AsyncAnthropic(api_key=api_key)
+        self._client = anthropic.AsyncAnthropic(api_key=api_key, timeout=90.0)
 
     async def call_with_tool(
         self,

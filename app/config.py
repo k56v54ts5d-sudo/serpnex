@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -36,4 +38,12 @@ class Settings(BaseSettings):
     google_redirect_uri: str = "http://localhost:8000/api/v1/auth/gsc/callback"
 
 
-settings = Settings()
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    return Settings()
+
+
+# Convenience alias — use get_settings() when testability matters.
+# Module-level `settings` is retained for Celery and Alembic which run outside
+# the FastAPI dependency injection context.
+settings = get_settings()

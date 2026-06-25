@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -35,7 +35,8 @@ class User(Base):
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # Null when the user authenticates via Google OAuth only
     google_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
-    # Encrypted GSC OAuth tokens stored as JSONB; null until user connects GSC
+    # GSC OAuth tokens stored as JSONB; null until user connects GSC.
+    # TODO: encrypt at rest before production launch (Sprint 5 security pass).
     gsc_tokens: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
@@ -82,16 +83,33 @@ class Page(Base):
     analyses: Mapped[list["PageAnalysis"]] = relationship("PageAnalysis", back_populates="page")
 
 
+_ANALYSIS_STATUSES = (
+    "QUEUED",
+    "COLLECTING_DATA",
+    "DATA_READY",
+    "SUMMARIZING_CONTENT",
+    "SUMMARIES_READY",
+    "RUNNING_READINESS",
+    "RUNNING_BOTTLENECK",
+    "ASSEMBLING_VERDICT",
+    "COMPLETE",
+    "FAILED",
+)
+
+_STATUS_CHECK = CheckConstraint(
+    f"status IN ({', '.join(repr(s) for s in _ANALYSIS_STATUSES)})",
+    name="ck_page_analyses_status",
+)
+
+
 class PageAnalysis(Base):
     __tablename__ = "page_analyses"
+    __table_args__ = (_STATUS_CHECK,)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     page_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("pages.id", ondelete="CASCADE"), nullable=False
     )
-    # State machine: QUEUED → COLLECTING_DATA → DATA_READY → SUMMARIZING_CONTENT →
-    #   SUMMARIES_READY → RUNNING_READINESS → RUNNING_BOTTLENECK → ASSEMBLING_VERDICT →
-    #   COMPLETE | FAILED
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="QUEUED")
     # Raw collected data snapshots (external API responses)
     raw_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True)

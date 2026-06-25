@@ -42,5 +42,9 @@ def get_gsc_provider() -> GSCProvider:
     if settings.gsc_provider == "google":
         from app.providers.implementations.google_gsc import GoogleGSCProvider
 
-        return GoogleGSCProvider()
+        return GoogleGSCProvider(
+            client_id=settings.google_client_id,
+            client_secret=settings.google_client_secret,
+            redirect_uri=settings.google_redirect_uri,
+        )
     raise ValueError(f"Unknown GSC provider: {settings.gsc_provider!r}")

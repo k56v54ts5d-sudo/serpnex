@@ -123,6 +123,12 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.Column("status", sa.String(50), nullable=False, server_default="QUEUED"),
+        sa.CheckConstraint(
+            "status IN ('QUEUED','COLLECTING_DATA','DATA_READY','SUMMARIZING_CONTENT',"
+            "'SUMMARIES_READY','RUNNING_READINESS','RUNNING_BOTTLENECK','ASSEMBLING_VERDICT',"
+            "'COMPLETE','FAILED')",
+            name="ck_page_analyses_status",
+        ),
         sa.Column("raw_data", JSONB, nullable=True),
         sa.Column("verdict", JSONB, nullable=True),
         sa.Column("error", sa.Text, nullable=True),

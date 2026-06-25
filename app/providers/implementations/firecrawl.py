@@ -44,16 +44,19 @@ class FirecrawlCrawlerProvider(CrawlerProvider):
             meta_description=metadata.get("description"),
         )
 
-    async def crawl_many(self, urls: list[str]) -> list[CrawlResult]:
+    async def crawl_many(self, urls: list[str]) -> list[CrawlResult | CrawlError]:
+        """Crawl all URLs concurrently. Returns one entry per URL — CrawlResult on
+        success, CrawlError on failure. Never raises; callers handle partial failures."""
         tasks = [self.crawl(url) for url in urls]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        raw = await asyncio.gather(*tasks, return_exceptions=True)
 
-        processed: list[CrawlResult] = []
-        for url, result in zip(urls, results):
-            if isinstance(result, CrawlError):
-                raise result
-            if isinstance(result, BaseException):
-                raise CrawlError(url, str(result))
-            processed.append(result)
+        results: list[CrawlResult | CrawlError] = []
+        for url, outcome in zip(urls, raw):
+            if isinstance(outcome, CrawlResult):
+                results.append(outcome)
+            elif isinstance(outcome, CrawlError):
+                results.append(outcome)
+            else:
+                results.append(CrawlError(url, str(outcome)))
 
-        return processed
+        return results
