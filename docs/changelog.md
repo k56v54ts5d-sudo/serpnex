@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-06-25 — Sprint 2: Analysis Pipeline (Part 2)
+
+### Added
+- `app/pipeline/readiness.py` — Readiness LLM worker: rules-based fast-fail (no-crawl, <200 words), Claude Haiku forced tool call, Pydantic validation with one retry, deterministic confidence override
+- `app/pipeline/bottleneck.py` — Bottleneck LLM worker: Claude Sonnet 4.6, full competitive context in prompt, validation layer, deterministic confidence override
+- `app/pipeline/orchestrator.py` — Celery task `serpnex.run_analysis`: 10-state machine, DB writes on each transition, Redis pub/sub progress events, `enqueue_analysis()` public API
+- `app/api/v1/analysis.py` — Analysis API: `POST /analyses` (enqueue), `GET /analyses/{id}` (poll), `GET /analyses/{id}/stream` (SSE real-time progress)
+- `tests/test_confidence.py` — 15 tests covering confidence scoring model and floor rules
+- `tests/test_validation.py` — 8 tests covering readiness and bottleneck business logic validation
+- `tests/test_summarizer.py` — 9 tests covering metadata extraction and summarize_page with retry
+
+### Modified
+- `app/main.py` — registered analysis router
+- `app/worker/celery_app.py` — added `app.pipeline.orchestrator` to task include list
+
+### Test status
+32 tests passing, 0 failing.
+
+---
+
 ## 2026-06-24
 
 ### Added

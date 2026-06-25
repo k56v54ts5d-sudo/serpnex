@@ -6,7 +6,7 @@ celery_app = Celery(
     "serpnex",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=[],  # task modules registered here as sprints add them
+    include=["app.pipeline.orchestrator"],
 )
 
 celery_app.conf.update(

@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: **Sprint 1 complete — Sprint 2 ready**  
+Current phase: **Sprint 2 — pipeline complete, orchestrator + SSE done**  
 Last updated: 2026-06-25
 
 ---
@@ -56,9 +56,32 @@ Last updated: 2026-06-25
 
 ---
 
-## In Progress
+## Sprint 2 — In Progress (2026-06-25)
 
-- Sprint 2: Analysis pipeline (analysis orchestrator, state machine, data collection workers, LLM workers, SSE)
+**Analysis pipeline — all core components written, tests passing.**
+
+### Completed in Sprint 2
+
+- **Migration 0002** — expanded `page_analyses` schema: 15 new columns, status values migrated to lowercase snake_case, new indexes
+- **`app/pipeline/confidence.py`** — deterministic confidence scoring (§8): signal weights, `calculate_confidence`, `apply_confidence_floors` with floor rules
+- **`app/pipeline/validation.py`** — business logic validation (§7.2): `validate_readiness_verdict`, `validate_bottleneck_verdict`
+- **`app/pipeline/cache.py`** — Redis TTL cache: per-namespace TTLs, `APICache`, `get_cache` singleton
+- **`app/pipeline/collectors.py`** — data collection orchestration (§3.2): `AnalysisContext`, 4-phase parallel collection
+- **`app/pipeline/summarizer.py`** — content summarization stage (§3.1a): deterministic metadata extraction, Claude Haiku summarization with retry
+- **`app/pipeline/readiness.py`** — Readiness LLM worker (§3.3, §5.3): rules-based fast-fail, Claude Haiku, validation + confidence floors
+- **`app/pipeline/bottleneck.py`** — Bottleneck LLM worker (§3.4, §5.4): Claude Sonnet 4.6, validation + confidence floors
+- **`app/pipeline/orchestrator.py`** — Celery task + state machine + Redis pub/sub progress events (10 states)
+- **`app/api/v1/analysis.py`** — SSE endpoint: `POST /analyses`, `GET /analyses/{id}`, `GET /analyses/{id}/stream`
+- **`docs/prompts/summarize-page-v1.md`** — prompt specification for summarization stage
+- **Tests**: 32 passing — confidence scoring (15 tests), validation (8 tests), summarizer (9 tests)
+
+### Remaining Sprint 2 Work
+
+- End-to-end integration test with mocked providers
+- Verify Celery worker picks up `app.pipeline.orchestrator` task registration
+- Update `pyproject.toml` dev dependencies to include `pytest-asyncio` (currently added ad hoc via `uv add --dev`)
+
+## In Progress
 
 ---
 

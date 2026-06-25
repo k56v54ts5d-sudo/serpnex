@@ -533,3 +533,35 @@ Updated Opportunity Evaluation signal weights:
 **Impact:** Scope is bounded. Do not add MVP features without updating this decision log.
 
 ---
+
+## 2026-06-25 — Sprint 2 Pre-work: Schema and Status Value Decisions
+
+### Decision: Analysis status values use lowercase snake_case; detailed state machine retained in DB
+
+**Context:** §3.1 defines a 10-state machine with UPPERCASE names. §9.2 shows 6 simplified states. Sprint 1 implemented the detailed states in UPPERCASE. All three sources contradicted each other.
+
+**Decision:** The detailed 10-state machine from §3.1 is the correct model — it exposes exactly where a job is for debugging. The §9.2 SQL was an illustrative simplification, not a constraint. All status values are written in lowercase snake_case to match PostgreSQL convention and the §9.2 direction.
+
+**Canonical status values:** `queued` → `collecting_data` → `data_ready` → `summarizing_content` → `summaries_ready` → `running_readiness` → `running_bottleneck` → `assembling_verdict` → `complete` | `failed`
+
+**Risks:** Migration 0002 updates the CHECK constraint and default value. No production data exists yet so this is safe.
+
+---
+
+### Decision: `workspace_members` and `gsc_integrations` deferred to post-MVP
+
+**Context:** §9.1 shows a `workspace_members` join table and a `gsc_integrations` table. Sprint 1 put `workspace_id` directly on `users` and stored GSC tokens as JSONB on the user.
+
+**Decision:** The Sprint 1 simplified schema is correct for MVP. Single workspace per user, single owner role — a join table adds complexity without enabling any MVP feature. `gsc_tokens` JSONB on `users` is sufficient for one GSC connection per user.
+
+**Post-MVP migration path:** When multi-workspace and RBAC are added, create `workspace_members`, create `gsc_integrations`, migrate data. No data loss.
+
+---
+
+### Decision: `page_analyses` expanded in migration 0002 for Sprint 2 workers
+
+**Context:** Sprint 1's `page_analyses` had only `raw_data`, `verdict`, `error`. Sprint 2 writes separate verdict columns, content summaries, prompt versions, confidence, and validation audit data per §9.2.
+
+**Decision:** Migration 0002 adds `summarization_prompt_version`, `prompt_version`, `content_summaries`, `readiness_verdict`, `bottleneck_verdict`, `readiness_confidence`, `bottleneck_confidence`, `data_quality`, `validation_overrides`, `workspace_id`, `started_at`, `completed_at`, `failed_reason`. The legacy `verdict` and `error` columns are retained but deprecated — they will be dropped post-MVP.
+
+---
