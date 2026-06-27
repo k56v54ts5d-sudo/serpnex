@@ -2,8 +2,8 @@
 
 **Status:** Pre-Sprint 4 — complete before implementation resumes  
 **Date:** 2026-06-27  
-**Purpose:** Identify weaknesses in the scoring model, signal extraction, prompt quality, and explanation quality using live websites before Sprint 4 scope is committed  
-**Method:** Run the complete IDE pipeline (live providers, no mocks) against 16 hand-selected URLs, then compare each verdict — and the reasoning behind it — against expert SEO judgment
+**Purpose:** Identify weaknesses in the scoring model, signal extraction, prompt quality, explanation quality, and actionability using live websites before Sprint 4 scope is committed  
+**Method:** Run the complete IDE pipeline (live providers, no mocks) against 16 hand-selected URLs, then compare each verdict — and the reasoning and next-step clarity behind it — against expert SEO judgment
 
 Do not change any implementation until this plan is fully executed and the findings section (§6) is complete.
 
@@ -20,12 +20,13 @@ Do not change any implementation until this plan is fully executed and the findi
 7. [Go / Conditional Go / No-Go](#7-go--conditional-go--no-go)
 8. [Assumptions Under Test](#8-assumptions-under-test)
 9. [Reasoning Quality Rubric](#9-reasoning-quality-rubric)
+10. [Actionability Rubric](#10-actionability-rubric)
 
 ---
 
 ## 1. What This Validates
 
-The IDE pipeline has five distinct layers. Each layer can fail independently. This validation tests all five simultaneously on real data.
+The IDE pipeline has six distinct layers. Each layer can fail independently. This validation tests all six simultaneously on real data.
 
 | Layer | What can go wrong |
 |---|---|
@@ -34,8 +35,9 @@ The IDE pipeline has five distinct layers. Each layer can fail independently. Th
 | **Deterministic scoring** | Cluster weights produce wrong outcome for edge cases; risk multiplier too aggressive or too lenient; editorial cap threshold wrong |
 | **Verdict language (Haiku Call 2)** | Headline does not match outcome tier; primary_reason does not reference D4 when required; conditions are vague or generic |
 | **Reasoning quality** | Correct verdict, wrong reason — the explanation cites the wrong signal, reverses cause and effect, or would not be trusted by an experienced SEO professional even though the outcome number is correct |
+| **Actionability** | Correct verdict, correct reasoning, but the user cannot determine what to do next — the explanation answers *what* without answering *why* and *what next*; conditions exist but are not specific enough to execute; a RECOMMENDED verdict gives no placement guidance; a NOT_RECOMMENDED verdict gives no useful diagnostic |
 
-A correct verdict with incorrect reasoning is **not a full success.** Users act on the explanation as much as the outcome tier. An explanation that is technically consistent with the score but names the wrong cause, omits the decisive signal, or uses language that does not match what an SEO practitioner would say from the same evidence will erode trust and produce wrong follow-on decisions.
+A correct verdict with incorrect reasoning is **not a full success.** Neither is a correct verdict with correct reasoning that leaves the user unable to act. An explanation must answer three questions clearly: what is the primary problem (or strength), why is that the decisive factor, and what should the user do next. An explanation that answers only the first two fails the actionability test.
 
 Additionally, this plan tests five confidence dimensions:
 
@@ -72,10 +74,11 @@ Complete all items before running the first URL.
 - [ ] Write the primary reason you would give if you were writing the verdict yourself — in one sentence, citing the most decisive signal
 - [ ] Write the two or three supporting signals you would expect a correct explanation to name
 - [ ] Write one condition you would require if the verdict were WITH_CONDITIONS
+- [ ] Write the single next action you would expect the explanation to make obvious — what should the user do immediately after reading it?
 
-This order matters: verdict-first comparison is corrupted if you see the score before forming a judgment. **Reasoning-first comparison is equally important** — if you write the expected explanation after reading the pipeline output, you will unconsciously align it with what the pipeline said, even when the pipeline is wrong.
+This order matters: verdict-first comparison is corrupted if you see the score before forming a judgment. **Reasoning-first and actionability-first comparison are equally important** — if you write the expected explanation and expected next step after reading the pipeline output, you will unconsciously align with what the pipeline said, even when it is wrong.
 
-Read §9 (Reasoning Quality Rubric) before filling in the expert reasoning section for the first time.
+Read §9 (Reasoning Quality Rubric) and §10 (Actionability Rubric) before filling in the expert sections for the first time.
 
 ---
 
@@ -318,6 +321,18 @@ that determines the confidence level):
 
 What a trustworthy explanation must NOT do for this URL
 (preemptive anti-patterns to watch for):
+___________________________________________
+
+Expected next action (the single step a user should take
+immediately after reading the verdict — be specific):
+  RECOMMENDED:       ___________________________________________
+  WITH_CONDITIONS:   ___________________________________________
+  NOT_RECOMMENDED:   ___________________________________________
+  (fill only the row that matches your expected outcome)
+
+Is there anything about this specific URL that the pipeline
+cannot know but a user would need in order to act? If so,
+note it here so it is not held against the pipeline:
 ___________________________________________
 
 
@@ -566,7 +581,161 @@ that apply):
 
 
 ════════════════════════════════════════════════════════════════
-SECTION E — FINAL SEVERITY AND NOTES
+SECTION E — ACTIONABILITY ASSESSMENT
+════════════════════════════════════════════════════════════════
+
+Fill this section after Section D. Assess whether the
+explanation leads to a clear, immediate next step. This is
+evaluated independently of reasoning quality — an explanation
+can be trustworthy and still leave the user without a path.
+
+E1. NEXT STEP CLARITY
+────────────────────────────────────────────────────────────────
+After reading the complete verdict (headline + primary_reason +
+supporting_signals + conditions + mode_qualifier), can a user
+state their next action without further research or discussion?
+
+[ ] Immediately clear — the next step is unambiguous. A user
+    could open their outreach tool, CRM, or task list right now
+    and write the action without asking a clarifying question.
+
+[ ] Requires inference — the verdict implies a next step but
+    does not state it. A user would need to read the verdict
+    twice and make a judgment about what it means for them.
+
+[ ] Unclear — the verdict does not indicate what the user
+    should do. The outcome is labelled but not translated into
+    forward motion. A user would need to ask a colleague or
+    re-run the analysis before acting.
+
+What next step does the explanation imply (infer it even if
+not stated explicitly)?
+___________________________________________
+
+What next step did you expect it to imply (from Section A2)?
+___________________________________________
+
+Do these match?  [ ] yes  [ ] partial  [ ] no
+
+E2. OUTCOME-SPECIFIC ACTIONABILITY
+────────────────────────────────────────────────────────────────
+Evaluate the verdict against the requirements specific to its
+outcome tier.
+
+--- If RECOMMENDED ---
+Does the explanation indicate what placement approach to take
+(e.g., confirm anchor context, verify OBL count, proceed to
+outreach)?
+[ ] yes — specific placement guidance present
+[ ] implied — practitioner can infer the approach
+[ ] no — verdict says RECOMMENDED with no forward step
+
+Does the headline give a user enough confidence to open an
+outreach conversation without re-reading the full verdict?
+[ ] yes  [ ] no
+
+--- If WITH_CONDITIONS ---
+Does each condition name a specific, verifiable criterion that
+can be checked before proceeding?
+[ ] yes, all conditions are verifiable  [ ] partial  [ ] no
+
+Can the user prioritise which condition to address first based
+on the explanation?
+[ ] yes — conditions are ordered or the primary risk is clear
+[ ] no — conditions are listed without priority
+
+Does the explanation make clear what happens if the conditions
+are met (proceed) vs not met (walk away)?
+[ ] yes  [ ] implied  [ ] no
+
+--- If NOT_RECOMMENDED ---
+Does the explanation give the user a diagnostic — something to
+look for when evaluating the next candidate, so the same
+mistake is not repeated?
+[ ] yes — the explanation names a pattern to avoid
+[ ] partial — names the problem but not how to avoid it next time
+[ ] no — says "not recommended" without a forward lesson
+
+Does the explanation distinguish between "this specific URL is
+wrong" and "this category of site is wrong"? (A user should
+know whether to try a different article on the same domain, a
+different domain in the same niche, or a different niche.)
+[ ] yes — scope of the problem is clear
+[ ] no — ambiguous whether the rejection is site-level or page-level
+[ ] n/a — gate triggered (gate reason scope is acceptable)
+
+--- If INSUFFICIENT_DATA ---
+Does the explanation tell the user what to do to get a usable
+result (e.g., provide a specific article URL instead of a
+domain, wait for the site to be indexed)?
+[ ] yes  [ ] partial  [ ] no
+
+E3. CONDITIONS ACTIONABILITY (with_conditions only)
+────────────────────────────────────────────────────────────────
+For each condition, rate independently:
+
+Condition 1: ___________________________________________
+[ ] Executable — practitioner can verify this without ambiguity
+[ ] Requires judgement — practitioner understands the criterion
+    but must make a call about whether it is met
+[ ] Not executable — too vague to verify without further context
+
+Condition 2: ___________________________________________
+[ ] Executable  [ ] Requires judgement  [ ] Not executable
+
+Condition 3: ___________________________________________
+[ ] Executable  [ ] Requires judgement  [ ] Not executable
+
+Overall conditions actionability:
+[ ] All executable   [ ] Mixed   [ ] None executable   [ ] n/a
+
+E4. OVERALL ACTIONABILITY RATING
+────────────────────────────────────────────────────────────────
+[ ] Fully actionable — a user can take the next step immediately
+    with no additional research, questions, or re-reads. The
+    verdict answers: what is the problem, why is it the problem,
+    and what to do now.
+
+[ ] Partially actionable — a user can roughly determine the next
+    step but must make at least one inference the verdict does
+    not explicitly support. OR: the next step is clear for the
+    primary path but not for a likely variant (e.g., conditions
+    are clear but it is not stated what to do if they cannot
+    be met).
+
+[ ] Not actionable — a user cannot determine the next step from
+    the verdict alone. The outcome is labelled but not
+    translated. The user would need to discuss, re-analyse, or
+    guess. Technically correct verdicts in this state provide
+    negative value: they deliver a conclusion without the means
+    to use it.
+
+E5. ACTIONABILITY FAILURE CLASSIFICATION
+────────────────────────────────────────────────────────────────
+If actionability is partial or not actionable, classify the gap
+(select all that apply):
+
+[ ] Missing next-step for RECOMMENDED — no placement guidance
+    (what to check, what to say in outreach, what to confirm)
+[ ] Conditions not executable — WITH_CONDITIONS verdict but
+    conditions cannot be verified without further analysis
+[ ] Conditions unprioritised — multiple conditions, no
+    indication of which is the primary risk or first step
+[ ] No diagnostic for NOT_RECOMMENDED — rejection gives no
+    lesson for the next candidate
+[ ] Scope ambiguous — user cannot tell whether to try a
+    different page, a different site, or a different niche
+[ ] INSUFFICIENT_DATA gives no recovery path — user does not
+    know what to change to get a usable result
+[ ] Forward branch missing — explanation names the current
+    state but does not indicate what changes it (e.g., "this
+    site's traffic is declining" without "therefore do not
+    invest until recovery is confirmed for 2 quarters")
+[ ] No actionability failure found
+
+
+════════════════════════════════════════════════════════════════
+SECTION F — FINAL SEVERITY AND NOTES
 ════════════════════════════════════════════════════════════════
 
 Overall verdict accuracy:
@@ -575,20 +744,32 @@ Overall verdict accuracy:
 Overall reasoning quality:
 [ ] Fully trustworthy  [ ] Partially trustworthy  [ ] Not trustworthy
 
+Overall actionability:
+[ ] Fully actionable  [ ] Partially actionable  [ ] Not actionable
+
 Combined result:
-[ ] Full pass    — correct outcome AND fully trustworthy reasoning
-[ ] Partial pass — correct outcome, partially trustworthy reasoning
-[ ] Reasoning failure — correct outcome, not trustworthy reasoning
-[ ] Verdict failure — wrong outcome (reasoning automatically fails)
+[ ] Full pass    — correct outcome AND trustworthy reasoning
+                  AND fully actionable
+[ ] Partial pass — correct outcome, all dimensions present but
+                  one is partial (specify which):  ___________
+[ ] Reasoning failure — correct outcome, not trustworthy
+[ ] Actionability failure — correct outcome, trustworthy
+                  reasoning, but user cannot determine next step
+[ ] Verdict failure — wrong outcome (all dimensions fail)
 
 Severity:
-[ ] Critical   — wrong outcome, or reasoning that actively
-                 misleads (user would make a worse decision)
-[ ] Significant — correct outcome, reasoning failure on primary
-                  reason or a decisive signal omitted
-[ ] Minor      — correct outcome and reasoning, one supporting
-                 signal vague or one secondary element off
-[ ] Pass       — correct outcome and fully trustworthy reasoning
+[ ] Critical   — wrong outcome, OR reasoning that actively
+                 misleads, OR actionability failure that would
+                 cause a user to make a worse decision than
+                 no verdict at all
+[ ] Significant — correct outcome, one dimension fails
+                  completely (reasoning not trustworthy, OR
+                  all conditions unexecutable, OR scope
+                  completely ambiguous)
+[ ] Minor      — correct outcome, all dimensions partially
+                 present, no dimension completely absent
+[ ] Pass       — correct outcome, fully trustworthy reasoning,
+                 fully actionable
 
 Notes:
 ```
@@ -601,13 +782,14 @@ Notes:
 
 ### 6.1 Summary Table
 
-Two columns per result: outcome accuracy (O) and reasoning quality (R).
+Three columns per result: outcome accuracy (O), reasoning quality (R), actionability (A).
 
-O: ✓ correct outcome / ~ wrong direction but right category / ✗ wrong outcome  
-R: ✓ fully trustworthy / ~ partially trustworthy / ✗ not trustworthy
+O: ✓ correct / ~ directionally wrong / ✗ wrong outcome  
+R: ✓ fully trustworthy / ~ partial / ✗ not trustworthy  
+A: ✓ fully actionable / ~ partial / ✗ not actionable
 
-| # | URL | Expected outcome | Got outcome | O | Reasoning quality | R | Severity |
-|---|-----|---------|-----|---|---------|---|---------|
+| # | URL | Expected | Got | O | R | A | Severity |
+|---|-----|---------|-----|---|---|---|---------|
 | A1 | | | | | | | |
 | A2 | | | | | | | |
 | A3 | | | | | | | |
@@ -629,8 +811,9 @@ R: ✓ fully trustworthy / ~ partially trustworthy / ✗ not trustworthy
 | E3 | | | | | | | |
 
 **Outcome accuracy rate:** ___ / 19 correct  
-**Full pass rate (correct outcome AND trustworthy reasoning):** ___ / 19  
-**Reasoning failure rate (correct outcome, not trustworthy reasoning):** ___ / 19
+**Full pass rate (correct outcome AND trustworthy reasoning AND fully actionable):** ___ / 19  
+**Reasoning failure rate (correct outcome, not trustworthy reasoning):** ___ / 19  
+**Actionability failure rate (correct outcome, trustworthy reasoning, not actionable):** ___ / 19
 
 ### 6.2 Pattern Analysis
 
@@ -827,6 +1010,127 @@ Verdict: Is the reasoning quality sufficient to ship to users?
     requires significant revision before Sprint 4
 ```
 
+### 6.9 Actionability Analysis
+
+**Complete after all 19 URLs are run.** Aggregates Section E of each worksheet.
+
+#### 6.9.1 Actionability Failure Frequency
+
+Count how many URLs triggered each failure classification from Section E5.
+
+| Failure type | Count | Example URL(s) |
+|---|---|---|
+| Missing next-step for RECOMMENDED | | |
+| Conditions not executable | | |
+| Conditions unprioritised | | |
+| No diagnostic for NOT_RECOMMENDED | | |
+| Scope ambiguous (page vs site vs niche) | | |
+| INSUFFICIENT_DATA gives no recovery path | | |
+| Forward branch missing | | |
+
+#### 6.9.2 Actionability by Outcome Tier
+
+Each outcome tier has a distinct actionability requirement. Tabulate separately.
+
+```
+RECOMMENDED verdicts evaluated: ___
+  Fully actionable (placement guidance present):    ___
+  Partially actionable (guidance implied):          ___
+  Not actionable (no forward step):                 ___
+
+WITH_CONDITIONS verdicts evaluated: ___
+  All conditions executable:                        ___
+  Mixed (some executable, some vague):              ___
+  No conditions executable:                         ___
+  Conditions prioritised (primary risk clear):      ___
+  Conditions unprioritised:                         ___
+
+NOT_RECOMMENDED verdicts evaluated: ___
+  Diagnostic present (lesson for next candidate):   ___
+  Scope clear (page vs site vs niche):              ___
+  No diagnostic, scope ambiguous:                   ___
+
+INSUFFICIENT_DATA verdicts evaluated: ___
+  Recovery path given:                              ___
+  No recovery path:                                 ___
+
+Gate-triggered verdicts evaluated: ___
+  Gate reason gives scope clarity:                  ___
+  Gate reason is terminal without guidance:         ___
+```
+
+#### 6.9.3 The Next-Step Test
+
+For every URL, record the single next action implied by the verdict (inferred from Section E1) and whether it matches what you wrote in Section A2 before running.
+
+```
+URL A1 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL A2 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL A3 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL A4 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL B1 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL B2 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL B3 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL B4 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL C1 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL C2 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL C3 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL C4 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL G1 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL G2 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL G3 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL G4 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL E1 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL E2 — next step implied: ___  matches expected: [ ] yes  [ ] no
+URL E3 — next step implied: ___  matches expected: [ ] yes  [ ] no
+
+Next-step match rate: ___ / 19
+```
+
+#### 6.9.4 Correct Outcome / Correct Reasoning / Not Actionable Cases
+
+These are the hardest cases to catch without this dimension. The verdict is right, the explanation is honest, but the user is still stuck.
+
+```
+For each URL where outcome was correct, reasoning was trustworthy,
+but actionability was partial or not actionable:
+
+URL ID: ___
+Outcome: _____
+What the verdict said:
+What the user would need to do next:
+What the verdict did not provide:
+Which actionability failure type (from E5) applies:
+Root cause — which prompt element is missing:
+  [ ] Call 2 was not asked to produce a next-step recommendation
+      for this outcome tier in the current prompt
+  [ ] Call 2 was asked but produced a generic next-step
+      ("proceed with outreach" vs "contact the editor at X")
+  [ ] The information needed to produce a next-step was not
+      available in the signal data (legitimate gap)
+  [ ] Other: ___
+
+Proposed prompt addition to fix this:
+```
+
+#### 6.9.5 Actionability Summary
+
+```
+Fully actionable:     ___ / 19 ( __% )
+Partially actionable: ___ / 19 ( __% )
+Not actionable:       ___ / 19 ( __% )
+
+Full pass (all three dimensions):
+  correct outcome + trustworthy reasoning + fully actionable: ___ / 19 ( __% )
+
+Verdict: Is actionability sufficient to ship to users?
+[ ] Yes — actionability failures are minor or isolated
+[ ] Conditional — specific prompt additions needed (list in §7)
+[ ] No — actionability is a blocking issue; Call 2 prompt must
+    be extended with outcome-specific next-step instructions
+    before Sprint 4
+```
+
 ---
 
 ## 7. Go / Conditional Go / No-Go
@@ -855,39 +1159,58 @@ Verdict accuracy and reasoning quality are scored separately. Both must pass for
 | Primary reason names correct signal | ≥ 80% (15/19) | 68–79% | < 68% |
 | Untrustworthy reasoning on correct outcome | ≤ 1 | 2–3 | ≥ 4 |
 | D4 cap applied but not cited in primary_reason | 0 | 1 | ≥ 2 |
-| Vague/unactionable conditions (WITH_CONDITIONS) | 0 | 1 | ≥ 2 |
+| Vague conditions (WITH_CONDITIONS) | 0 | 1 | ≥ 2 |
 
-**Interpretation:** A Conditional Go on reasoning means specific prompt changes are required before Sprint 4 begins — not after. The Call 2 prompt (`docs/prompts/opportunity-v1.md`) must be revised, re-tested on the failing cases, and signed off. Do not defer reasoning improvements to Sprint 4 scope.
+**Actionability thresholds:**
+
+| Condition | Go | Conditional Go | No-Go |
+|---|---|---|---|
+| Full pass rate (all three dimensions) | ≥ 75% (14/19) | 63–74% (12–13/19) | < 63% (≤ 11/19) |
+| Not-actionable verdicts on correct outcome | 0 | 1–2 | ≥ 3 |
+| WITH_CONDITIONS: all conditions executable | ≥ 80% of cases | 60–79% | < 60% |
+| NOT_RECOMMENDED: diagnostic present | ≥ 80% of cases | 60–79% | < 60% |
+| Next-step match rate (E1 vs A2 expectation) | ≥ 75% (14/19) | 63–74% | < 63% |
+
+**Interpretation:** All three gates — verdict accuracy, reasoning quality, and actionability — must each reach Go or Conditional Go for Sprint 4 to proceed. A No-Go on any single dimension blocks the sprint regardless of the other two. Conditional Go on any dimension requires the specific changes listed below to be implemented, re-tested on the failing cases, and signed off before Sprint 4 implementation starts. Do not defer any dimension's improvements into Sprint 4 scope.
 
 ### Decision
 
 ```
-VERDICT ACCURACY: [ ] GO  [ ] CONDITIONAL GO  [ ] NO-GO
+VERDICT ACCURACY:  [ ] GO  [ ] CONDITIONAL GO  [ ] NO-GO
 REASONING QUALITY: [ ] GO  [ ] CONDITIONAL GO  [ ] NO-GO
+ACTIONABILITY:     [ ] GO  [ ] CONDITIONAL GO  [ ] NO-GO
 
 Combined decision:
 [ ] GO — Sprint 4 may begin
 [ ] CONDITIONAL GO — required changes documented below; must be
     complete and verified before Sprint 4 implementation starts
-[ ] NO-GO — scoring model or prompt requires rework; re-run
+[ ] NO-GO — one or more dimensions require rework; re-run
     affected URL categories after changes
 
 Date: ___________
 Signed off by: ___________
 
 Required changes before Sprint 4 (if Conditional Go or No-Go):
+
 Verdict accuracy changes:
 1.
 2.
 
-Reasoning quality changes (prompt revisions):
+Reasoning quality changes (prompt revisions to opportunity-v1.md):
 1.
 2.
 3.
 
-Verification plan (how to confirm each change worked):
+Actionability changes (Call 2 prompt additions per outcome tier):
+  RECOMMENDED next-step guidance:
+  WITH_CONDITIONS condition prioritisation:
+  NOT_RECOMMENDED diagnostic instruction:
+  INSUFFICIENT_DATA recovery path instruction:
+
+Verification plan (which specific URLs to re-run to confirm each fix):
 1.
 2.
+3.
 ```
 
 ---
@@ -990,6 +1313,95 @@ This would be a verdict error (wrong outcome) in addition to a reasoning failure
 
 ---
 
+## 10. Actionability Rubric
+
+Read this section before filling in Section A2 (Expected Next Action) and Section E (Actionability Assessment) of any worksheet. It defines what "fully actionable" means for each outcome tier so assessments are consistent across all 19 URLs.
+
+### 10.1 What Actionability Means
+
+An explanation is fully actionable when, after reading it, a user can name their next action without asking a clarifying question or consulting another source. The verdict must answer three questions:
+
+1. **What is the primary problem or strength?** — the decisive signal, stated specifically
+2. **Why is it the primary problem or strength?** — the mechanism by which it affects the investment decision, not just the label
+3. **What should the user do next?** — a concrete forward step that follows from the first two answers
+
+An explanation that answers 1 and 2 but not 3 is trustworthy but not actionable. The user understands the verdict and believes it, but cannot move forward without additional judgment.
+
+### 10.2 What "Next Step" Means Per Outcome Tier
+
+The required next step is different for each outcome tier. Use these definitions when filling in Section A2 and Section E2.
+
+**RECOMMENDED**
+
+The next step is a placement action. The explanation should make it clear what to confirm or verify before opening outreach. Minimally: what to check (OBL count, anchor context, article angle), what to say (why this is a good fit), and what would change the verdict (if any). A RECOMMENDED verdict that says nothing about placement approach is partially actionable at best.
+
+Fully actionable example:
+> "This article is a strong match for a link to your technical SEO guide — the article's H2 structure leaves a natural gap at the 'crawlability' section where a contextual link fits without rewriting. Outreach should reference the specific section and propose anchor text in the 'technical audit' cluster rather than a generic 'SEO guide' link."
+
+Not actionable example:
+> "This is a high-quality site with strong topical alignment. We recommend proceeding with link acquisition."
+
+The second tells the user to proceed but not how, what to confirm, or what would invalidate the recommendation.
+
+**WITH_CONDITIONS**
+
+The next step is verification. Each condition must name something that can be checked and state what the result means for the decision. The conditions must be ordered or prioritised so the user knows which to address first and what happens if a condition cannot be met.
+
+Fully actionable example:
+> "Condition 1 (primary): Confirm that the OBL count on the target article is ≤ 4 external links — this is the deciding factor. If the count is higher, the editorial integrity concern is unresolved and the site should not be used. Condition 2 (secondary): Verify that the article covers your specific sub-topic at ≥ 300 words rather than mentioning it in passing — this determines anchor text options."
+
+Not actionable example:
+> "Ensure that editorial standards are maintained and that the placement is contextually appropriate."
+
+**NOT_RECOMMENDED**
+
+The next step is a redirect. The explanation should tell the user: (a) whether this is a page-level rejection or a site-level rejection, (b) what the disqualifying pattern looks like so they can avoid it in the next candidate, and (c) whether there is a recovery path (e.g., "revisit in 6 months if traffic recovers") or a hard stop (e.g., "this editorial pattern is a site-level characteristic, not page-specific").
+
+Fully actionable example:
+> "This site's editorial integrity problem (D4: 0.19) is site-wide — every sampled article shows 10+ external links without topical relationship to the article content. This is not fixable by finding a different article on the same domain. Look for a domain in the same niche where sampled articles have ≤ 4 OBL per article and links are contextually embedded, not appended."
+
+Not actionable example:
+> "This site does not meet the investment criteria for your target page."
+
+The second gives the user no direction on what to look for next or whether to try a different page on the same domain.
+
+**INSUFFICIENT_DATA**
+
+The next step is a re-submission with better input. The explanation must name exactly what is missing and what the user should provide or change to get a usable result.
+
+Fully actionable example:
+> "The domain's crawler block prevented content analysis, and DataForSEO returned no traffic data for this domain — both are required for scoring. To get a verdict: (1) submit a specific article URL rather than the bare domain, or (2) if the site is new and not yet indexed, it cannot be evaluated at this time."
+
+Not actionable example:
+> "Insufficient data was available to complete this evaluation."
+
+### 10.3 The "Stuck Test"
+
+For each verdict, apply this test: if the user reads the explanation, closes the app, and tries to take the next step an hour later, what do they do? If they have to re-open the app and re-read the verdict before they can act, the verdict is partially actionable. If they cannot reconstruct the next step even after re-reading, it is not actionable.
+
+A verdict passes the stuck test when the implied next action is specific enough that it can survive being written in a task list entry. "Review site" does not pass. "Check OBL count on /article-url — accept if ≤ 4, reject if more" does.
+
+### 10.4 Calibration Examples — Actionability
+
+**Same scenario as §9.5:** WITH_CONDITIONS, investment score 58, D4 = 0.52, relevance = 0.61.
+
+**Fully actionable:**
+> Conditions: "1 (primary): Verify that the target article's specific paragraph about content frameworks contains ≤ 3 existing external links — at the current score, one additional editorial link is the maximum the D4 threshold will support. If more than 3 exist already, the placement is not viable on this article. 2 (secondary): Confirm anchor text references 'content strategy' specifically rather than 'marketing' broadly — the relevance gap is at the category level, not the niche level."
+
+The user writes two tasks: (1) check OBL count on specific paragraph, (2) draft anchor text with "content strategy" framing. Both are executable immediately.
+
+**Partially actionable:**
+> Conditions: "Ensure the anchor text is contextually relevant to the article's topic. Confirm that the editorial standards align with your requirements before proceeding."
+
+The user understands there are conditions but cannot verify either without making a judgment call about what "contextually relevant" and "editorial standards" mean in this context.
+
+**Not actionable:**
+> Conditions: "Quality and relevance should be reviewed before committing to this placement."
+
+The user has been told to do something they were already going to do. The verdict has not advanced their decision at all.
+
+---
+
 ## Appendix: Known Risks to Watch For
 
 These are failure modes anticipated during implementation. Watch for them during execution.
@@ -1020,3 +1432,12 @@ Even when Call 1 rationale fields are specific, Call 2 may pattern-match on the 
 
 **Risk 9 — Correct outcome, systematically wrong explanation category.**  
 Some scoring configurations produce a correct outcome for two different reasons. Example: a site scores NOT_RECOMMENDED because both relevance is low (0.28) AND D4 is below the cap (0.25). Call 2 might consistently cite relevance and ignore D4, producing a not-trustworthy explanation even though the outcome is right. This matters because a user who reads "low relevance" will look for a more relevant site — which might have the same editorial integrity problem. Watch for this specifically on A4 and B4 where both signals are expected to be weak.
+
+**Risk 10 — Actionability failure on RECOMMENDED verdicts.**  
+RECOMMENDED is the outcome where actionability matters most — the user is ready to move. If the verdict says RECOMMENDED but does not indicate *how* to proceed (what to verify before outreach, what anchor context to confirm, what to say to the site owner), the user benefits no more than they would from a binary yes/no. The current Call 2 prompt asks for supporting signals and a headline but does not explicitly require a next-step recommendation for RECOMMENDED outcomes. This is the most likely actionability gap to find in this validation.
+
+**Risk 11 — WITH_CONDITIONS conditions are stated but not prioritised.**  
+When two or three conditions are listed, the user must decide which to address first. If the verdict does not indicate priority — either by ordering, by flagging which condition is the primary risk, or by stating "conditions must all be met" vs "condition 1 is a dealbreaker" — the user may spend time on the wrong thing first. This is especially likely when one condition is a hard stop (e.g., "verify D4 has not declined further") and another is a soft improvement (e.g., "confirm anchor text context"). Watch for this in B2 and C1 where WITH_CONDITIONS is the expected outcome.
+
+**Risk 12 — NOT_RECOMMENDED verdicts terminate rather than redirect.**  
+A NOT_RECOMMENDED verdict that says only "this site does not meet investment criteria" gives the user no direction. The correct actionability pattern is: state the primary disqualifier, name whether it is site-level or page-level, and indicate what a qualifying site in this niche would look like. Without the third element, the user must start the discovery process from scratch. Watch for this in A2, B3, and C3 where NOT_RECOMMENDED is expected for different reasons — each should produce a different redirect.
