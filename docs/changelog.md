@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-06-27 — Sprint 3: Investment Decision Engine complete
+
+### Added
+- `alembic/versions/0003_opportunities_schema.py` — `opportunities` table migration: 9-state machine, 4 outcome tiers, 4 CheckConstraints, 4 indexes.
+- `app/schemas/opportunities.py` — Full IDE schema layer: `InvestmentOutcome`, `HardExclusionGate`, `PlacementFeasibility` enums; `SignalScores`, `ClusterScores`, `ScoreResult`, `GateResult`, `InvestmentVerdict` models; `IDEContext` dataclass with `data_quality` property.
+- `app/pipeline/ide_collector.py` — Mode detection (deterministic URL path + HTTP probe), section inference for Mode B/domain (Haiku + homepage/sitemap crawl), parallel data collection returning a fully populated `IDEContext`.
+- `app/pipeline/ide_gates.py` — Hard exclusion gates H1–H5 evaluated in order before any LLM call. H3 (spam), H1 (prohibited content), H2 (deindexed), H4 (language), H5 (manual action).
+- `app/pipeline/ide_scorer.py` — Deterministic 10-step scoring pipeline. Converts provider metrics to 0–1 floats, computes Relevance/Authority/Quality clusters, Risk multiplier, editorial integrity cap, investment score (0–100), outcome tier, and confidence ceiling.
+- `app/pipeline/ide_llm.py` — Two Haiku calls: Call 1 signal extraction with mode-aware prompt builders (Mode A and Mode B templates per `docs/prompts/opportunity-v1.md`), Call 2 verdict assembly. Forced tool use. One retry per call.
+- `app/pipeline/ide_orchestrator.py` — Celery task `serpnex.run_ide`. 9-state machine with per-stage failure handling, gate-excluded short-circuit path, fallback verdict when Call 2 fails. Redis pub/sub SSE events.
+- `app/api/v1/opportunities.py` — REST + SSE: `POST /opportunities`, `GET /opportunities/{id}`, `GET /opportunities/{id}/stream`.
+- `tests/test_ide_gates.py` — 21 tests covering H1–H5 triggers, non-triggers, and gate ordering.
+- `tests/test_ide_scorer.py` — 26 tests: conversion helpers, risk computation, risk multiplier, outcome tiers, confidence ceiling, full scorer integration.
+- `tests/test_ide_e2e.py` — 8 orchestrator E2E tests: happy path (Mode A + Mode B), gate exclusion, collection failure, verdict assembly failure fallback, missing opportunity record.
+
+### Modified
+- `app/db/models.py` — `Opportunity` SQLAlchemy ORM model added.
+- `app/main.py` — Opportunities router registered.
+- `app/worker/celery_app.py` — `app.pipeline.ide_orchestrator` added to Celery `include`.
+
+### Test status
+126 passing, 0 failing.
+
+---
+
 ## 2026-06-27 — Pre-Sprint 3 deliverables complete
 
 ### Added

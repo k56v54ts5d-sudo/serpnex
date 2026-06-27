@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api.v1 import analysis, gsc, health
+from app.api.v1 import analysis, gsc, health, opportunities
 
 app = FastAPI(
     title="Serpnex",
@@ -12,6 +12,7 @@ app = FastAPI(
 app.include_router(health.router, prefix="/api/v1", tags=["health"])
 app.include_router(gsc.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
+app.include_router(opportunities.router, prefix="/api/v1")
 
 
 @app.exception_handler(ValueError)

@@ -192,3 +192,92 @@ class PageAnalysis(Base):
     )
 
     page: Mapped[Page] = relationship("Page", back_populates="analyses")
+
+
+# Valid states for the opportunities state machine (§3.5, ide-implementation-design.md)
+OPPORTUNITY_STATUSES = (
+    "queued",
+    "detecting_mode",
+    "inferring_section",
+    "collecting_data",
+    "classifying_signals",
+    "computing_score",
+    "assembling_verdict",
+    "complete",
+    "failed",
+)
+
+_EVALUATION_MODES = ("specific_placement", "guest_post_opportunity")
+_MODE_B_SUBTYPES = ("category_url", "domain_inferred")
+_OUTCOMES = ("recommended", "with_conditions", "not_recommended", "insufficient_data")
+
+
+class Opportunity(Base):
+    __tablename__ = "opportunities"
+    __table_args__ = (
+        CheckConstraint(
+            f"status IN ({', '.join(repr(s) for s in OPPORTUNITY_STATUSES)})",
+            name="ck_opportunities_status",
+        ),
+        CheckConstraint(
+            f"evaluation_mode IN ({', '.join(repr(m) for m in _EVALUATION_MODES)}) OR evaluation_mode IS NULL",
+            name="ck_opportunities_evaluation_mode",
+        ),
+        CheckConstraint(
+            f"overall_outcome IN ({', '.join(repr(o) for o in _OUTCOMES)}) OR overall_outcome IS NULL",
+            name="ck_opportunities_outcome",
+        ),
+        CheckConstraint(
+            f"confidence IN ({', '.join(repr(c) for c in _CONFIDENCE_VALUES)}) OR confidence IS NULL",
+            name="ck_opportunities_confidence",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    page_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pages.id", ondelete="CASCADE"), nullable=False
+    )
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True
+    )
+
+    # Prospect being evaluated
+    prospect_url: Mapped[str] = mapped_column(Text, nullable=False)
+    prospect_domain: Mapped[str] = mapped_column(String(255), nullable=False)
+
+    # Evaluation mode (populated during detecting_mode state)
+    evaluation_mode: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    mode_b_subtype: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    inferred_section: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # State machine
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="queued")
+
+    # Prompt versioning
+    prompt_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Computed scores
+    investment_score: Mapped[float | None] = mapped_column(nullable=True)
+    cluster_scores: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    # Verdict
+    opportunity_verdict: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    overall_outcome: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    confidence: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    confidence_ceiling: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
+    # Audit
+    validation_overrides: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    data_quality: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
+    # Timing
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    page: Mapped[Page] = relationship("Page")

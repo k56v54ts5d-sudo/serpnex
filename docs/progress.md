@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: **Sprint 2 — COMPLETE**  
+Current phase: **Sprint 3 — COMPLETE**  
 Last updated: 2026-06-27
 
 ---
@@ -86,6 +86,32 @@ All remaining Sprint 2 work completed:
 **Known deferred integration point:** `gsc_tokens` / `gsc_property` are hardcoded `None` in the orchestrator. GSC data collection requires the OAuth flow + token persistence layer (Sprint 3 scope). Not a bug — by design.
 
 **Final test count: 59 passing, 0 failing.**
+
+## Sprint 3 — COMPLETE (2026-06-27)
+
+**Investment Decision Engine — full implementation.**
+
+### New files
+- `alembic/versions/0003_opportunities_schema.py` — `opportunities` table: 9-state machine, 4 CheckConstraints, 4 indexes
+- `app/schemas/opportunities.py` — all IDE enums, `SignalScores`, `ClusterScores`, `ScoreResult`, `GateResult`, `InvestmentVerdict`, `IDEContext`
+- `app/pipeline/ide_collector.py` — mode detection (deterministic URL + HTTP), section inference (Haiku), parallel data collection
+- `app/pipeline/ide_gates.py` — hard exclusion gates H1–H5, evaluated in order, no LLM
+- `app/pipeline/ide_scorer.py` — deterministic scoring: 5 conversion tables, 3 clusters, risk multiplier, editorial cap, outcome tiers, confidence ceiling
+- `app/pipeline/ide_llm.py` — Haiku Call 1 (signal extraction) + Call 2 (verdict assembly), mode-aware prompt builders, forced tool use
+- `app/pipeline/ide_orchestrator.py` — Celery task `serpnex.run_ide`, 9-state machine, `enqueue_opportunity()`, gate-excluded exit path, fallback verdict on Call 2 failure
+- `app/api/v1/opportunities.py` — `POST /opportunities`, `GET /opportunities/{id}`, `GET /opportunities/{id}/stream` (SSE, pub/sub)
+- `tests/test_ide_gates.py` — 21 gate tests (H1–H5, ordering)
+- `tests/test_ide_scorer.py` — 26 scorer tests (conversions, risk, outcome, ceiling, integration)
+- `tests/test_ide_e2e.py` — 8 E2E tests (happy path, Mode B, gate exclusion, error handling)
+
+### Modified files
+- `app/db/models.py` — `Opportunity` ORM model added
+- `app/main.py` — opportunities router registered
+- `app/worker/celery_app.py` — `ide_orchestrator` added to includes
+
+**Test count: 126 passing, 0 failing.**
+
+---
 
 ## In Progress
 

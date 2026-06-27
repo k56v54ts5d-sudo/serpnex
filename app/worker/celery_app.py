@@ -6,7 +6,7 @@ celery_app = Celery(
     "serpnex",
     broker=settings.redis_url,
     backend=settings.redis_url,
-    include=["app.pipeline.orchestrator"],
+    include=["app.pipeline.orchestrator", "app.pipeline.ide_orchestrator"],
 )
 
 celery_app.conf.update(
