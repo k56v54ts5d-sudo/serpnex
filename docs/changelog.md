@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-06-27 — Pre-Sprint 3 deliverables complete
+
+### Added
+- `docs/prompts/opportunity-v1.md` — Complete two-call Haiku prompt specification for the Investment Decision Engine. Covers: shared system prompt (5 rules, anti-bias framing), Call 1 signal extraction (mode-aware user message templates for Mode A and Mode B, full variable definitions, tool schema for `extract_investment_signals` with 14 fields), Call 2 verdict assembly (user message template with all computed scores as inputs, tool schema for `assemble_investment_verdict`, instructions preventing LLM from overriding deterministic outcome), anti-bias rules (5 documented), signal scoring reference table, and prompt changelog.
+
+### Modified
+- `app/providers/base/search_data.py` — Added `DomainMetrics` dataclass (provider-agnostic domain intelligence model: `traffic_tier`, `traffic_trajectory`, `referring_domains`, `spam_risk`, `maturity_years`) and `get_domain_metrics(domain)` abstract method to `SearchDataProvider` ABC.
+- `app/providers/implementations/dataforseo.py` — Implemented `get_domain_metrics()`: maps DataForSEO Domain Overview (traffic signals, trajectory, domain age) and Backlinks Summary (referring domains, spam score inverted to 0–1 clean scale) to `DomainMetrics`. Falls back gracefully if either API call fails.
+- `docs/intelligence-architecture.md §9.2` — Synced both table schemas to match implementation: `page_analyses` status now shows full 10-state machine; `opportunities` table fully rewritten to match approved IDE design (9-state machine, `evaluation_mode`, `mode_b_subtype`, `inferred_section`, `investment_score`, `cluster_scores`, `confidence_ceiling`, `InvestmentVerdict` schema reference, `started_at`, `failed_reason`, `data_quality`).
+
+### Test status
+59 passing, 0 failing. Provider interface change is backward-compatible — existing call sites unchanged.
+
+---
+
 ## 2026-06-27 — ContentSignals: planned post-Sprint 3 enhancement documented
 
 ### Added

@@ -89,6 +89,16 @@ All remaining Sprint 2 work completed:
 
 ## In Progress
 
+### Pre-Sprint 3 Architecture Review + Deliverables (2026-06-27)
+
+Architecture review completed. Three gaps identified and resolved:
+
+1. **`docs/prompts/opportunity-v1.md`** — Written. Two-call Haiku prompt spec (signal extraction + verdict assembly), both mode-aware templates, 14-field tool schema for Call 1, 5-field tool schema for Call 2, anti-bias rules, signal scoring reference.
+2. **`SearchDataProvider` ABC** — Extended with provider-agnostic `DomainMetrics` model and `get_domain_metrics()` abstract method. `DataForSEOSearchDataProvider` implementation added (DataForSEO Domain Overview + Backlinks Summary → DomainMetrics mapping).
+3. **`intelligence-architecture.md §9.2`** — Documentation synced: `page_analyses` status updated to 10-state machine; `opportunities` table fully rewritten to match approved IDE schema.
+
+59 tests passing. Architecture now matches implementation.
+
 ### IDE Implementation Design (2026-06-27)
 
 `docs/ide-implementation-design.md` written and awaiting user approval. Covers:

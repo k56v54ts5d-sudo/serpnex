@@ -1255,83 +1255,115 @@ CREATE TABLE pages (
 
 ```sql
 -- Full page analysis runs (Readiness + Bottleneck together)
+-- State machine: 10 states in lowercase snake_case (see §3.1)
 CREATE TABLE page_analyses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     page_id UUID REFERENCES pages(id) ON DELETE CASCADE,
-    workspace_id UUID REFERENCES workspaces(id),
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'queued'
-        CHECK (status IN ('queued', 'collecting_data', 'summarizing_content', 'running', 'complete', 'failed')),
-    
+        CHECK (status IN (
+            'queued', 'collecting_data', 'data_ready',
+            'summarizing_content', 'summaries_ready',
+            'running_readiness', 'running_bottleneck',
+            'assembling_verdict', 'complete', 'failed'
+        )),
+
     -- Prompt versioning (track both summarization and bottleneck prompt versions separately)
     summarization_prompt_version TEXT, -- e.g. "summarize-page/v1"
-    prompt_version TEXT,               -- e.g. "bottleneck/v2"
-    
+    prompt_version TEXT,               -- e.g. "bottleneck/v1"
+
     -- Raw collected data (stored for debugging and re-runs without re-fetching)
     raw_data JSONB,                    -- {gsc: {...}, serp: {...}, backlinks: {...}, crawl: {...}}
-    
+
     -- Generated content summaries (stored to enable re-running Bottleneck without re-crawling)
-    content_summaries JSONB,           -- {target: "...", competitors: ["...", "...", "..."]}
-    
+    content_summaries JSONB,           -- {target: PageSummary, competitors: [PageSummary, ...], prompt_version: str}
+
     -- Verdicts (structured, validated before storage)
-    readiness_verdict JSONB,           -- ReadinessVerdict schema
-    bottleneck_verdict JSONB,          -- BottleneckVerdict schema
-    
-    -- Confidence scores (deterministic, post-validation)
+    readiness_verdict JSONB,           -- ReadinessVerdict schema (§6.1)
+    bottleneck_verdict JSONB,          -- BottleneckVerdict schema (§6.2)
+
+    -- Confidence scores (deterministic, post-validation; may override LLM self-report)
     readiness_confidence TEXT CHECK (readiness_confidence IN ('low', 'medium', 'high')),
     bottleneck_confidence TEXT CHECK (bottleneck_confidence IN ('low', 'medium', 'high')),
-    
+
     -- Data quality flags
-    data_quality JSONB,                -- {gsc_connected: bool, competitor_count: int, ...}
-    
+    data_quality JSONB,                -- {page_crawled: bool, gsc_connected: bool, competitor_count: int, ...}
+
     -- Outcome tracking (future: populated when Campaigns module captures results)
     outcome_tracked BOOLEAN DEFAULT FALSE,
     bottleneck_confirmed BOOLEAN,      -- null until outcome data available
-    
+
     -- Validation audit
     validation_overrides JSONB,        -- records any confidence floor overrides applied
-    
+
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
     failed_reason TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_page_analyses_page_id ON page_analyses(page_id);
 CREATE INDEX idx_page_analyses_workspace_id ON page_analyses(workspace_id);
 CREATE INDEX idx_page_analyses_status ON page_analyses(status);
 
--- Opportunity evaluations
+-- Opportunity evaluations (Investment Decision Engine — see §3.5 and ide-implementation-design.md)
+-- State machine: 9 states covering mode detection, optional section inference,
+-- data collection, signal classification, scoring, verdict assembly.
 CREATE TABLE opportunities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    page_id UUID REFERENCES pages(id) ON DELETE CASCADE,
-    workspace_id UUID REFERENCES workspaces(id),
-    
+    page_id UUID REFERENCES pages(id) ON DELETE CASCADE NOT NULL,
+    workspace_id UUID REFERENCES workspaces(id) ON DELETE SET NULL,
+
     -- The prospect being evaluated
     prospect_url TEXT NOT NULL,
     prospect_domain TEXT NOT NULL,
-    
+
+    -- Evaluation mode (set during detecting_mode state)
+    evaluation_mode TEXT CHECK (evaluation_mode IN ('specific_placement', 'guest_post_opportunity')),
+    mode_b_subtype TEXT CHECK (mode_b_subtype IN ('category_url', 'domain_inferred')),
+    inferred_section TEXT,             -- populated for domain_inferred sub-type only
+
+    -- State machine: 9 states
     status TEXT NOT NULL DEFAULT 'queued'
-        CHECK (status IN ('queued', 'running', 'complete', 'failed')),
-    
-    prompt_version TEXT,
-    
-    -- Raw data
-    raw_prospect_data JSONB,           -- crawled content + authority signals
-    
+        CHECK (status IN (
+            'queued', 'detecting_mode', 'inferring_section',
+            'collecting_data', 'classifying_signals',
+            'computing_score', 'assembling_verdict',
+            'complete', 'failed'
+        )),
+
+    -- Prompt versioning
+    prompt_version TEXT,               -- e.g. "opportunity/v1"
+
+    -- Computed scores (stored for UI display and debugging)
+    investment_score FLOAT CHECK (investment_score >= 0 AND investment_score <= 100),
+    cluster_scores JSONB,              -- ClusterScores schema (Relevance, Authority, Quality, Risk)
+
     -- Verdict
-    opportunity_verdict JSONB,         -- OpportunityVerdict schema
-    overall_outcome TEXT CHECK (overall_outcome IN ('recommended', 'with_conditions', 'avoid')),
+    opportunity_verdict JSONB,         -- InvestmentVerdict schema (§6.3)
+    overall_outcome TEXT CHECK (overall_outcome IN (
+        'recommended', 'with_conditions', 'not_recommended', 'insufficient_data'
+    )),
     confidence TEXT CHECK (confidence IN ('low', 'medium', 'high')),
-    
+    confidence_ceiling TEXT CHECK (confidence_ceiling IN ('low', 'medium', 'high')),
+
+    -- Audit
     validation_overrides JSONB,
-    
+    data_quality JSONB,
+
+    -- Timing
+    started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    failed_reason TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX idx_opportunities_page_id ON opportunities(page_id);
 CREATE INDEX idx_opportunities_workspace_id ON opportunities(workspace_id);
 CREATE INDEX idx_opportunities_outcome ON opportunities(overall_outcome);
+CREATE INDEX idx_opportunities_status ON opportunities(status);
 
 -- Execution plans
 CREATE TABLE execution_plans (
