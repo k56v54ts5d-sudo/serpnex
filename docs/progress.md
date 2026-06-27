@@ -1,7 +1,7 @@
 # Progress
 
-Current phase: **Sprint 2 — pipeline complete, orchestrator + SSE done**  
-Last updated: 2026-06-25
+Current phase: **Sprint 2 — COMPLETE**  
+Last updated: 2026-06-27
 
 ---
 
@@ -75,11 +75,17 @@ Last updated: 2026-06-25
 - **`docs/prompts/summarize-page-v1.md`** — prompt specification for summarization stage
 - **Tests**: 32 passing — confidence scoring (15 tests), validation (8 tests), summarizer (9 tests)
 
-### Remaining Sprint 2 Work
+### Sprint 2 — COMPLETE (2026-06-27)
 
-- End-to-end integration test with mocked providers
-- Verify Celery worker picks up `app.pipeline.orchestrator` task registration
-- Update `pyproject.toml` dev dependencies to include `pytest-asyncio` (currently added ad hoc via `uv add --dev`)
+All remaining Sprint 2 work completed:
+
+- **`tests/test_pipeline_e2e.py`** — 7 E2E integration tests covering: happy path state transitions, crawl failure → failed state, missing page record, page crawl None (INSUFFICIENT_DATA), and 3 Celery registration smoke tests
+- **`pyproject.toml`** — dev dependencies properly declared in both `[project.optional-dependencies]` and `[dependency-groups]` (uv-native format); `uv run pytest` works without flags
+- **Self-review complete** — no architectural deviations, no shortcuts, no direct vendor imports
+
+**Known deferred integration point:** `gsc_tokens` / `gsc_property` are hardcoded `None` in the orchestrator. GSC data collection requires the OAuth flow + token persistence layer (Sprint 3 scope). Not a bug — by design.
+
+**Final test count: 59 passing, 0 failing.**
 
 ## In Progress
 

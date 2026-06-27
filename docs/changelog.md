@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-06-27 — Sprint 2: Final closure
+
+### Added
+- `tests/test_pipeline_e2e.py` — 7 E2E integration tests: happy path (all 8 state transitions verified), crawl failure → failed, missing page record, page crawl None, plus 3 Celery smoke tests (task registered, callable, module in include list)
+
+### Modified
+- `pyproject.toml` — added `[dependency-groups]` dev section (uv-native format) so `uv run pytest` works without `--extra dev`; `uv.lock` updated
+
+### Sprint 2 status: COMPLETE
+59 tests passing, 0 failing.
+
+---
+
 ## 2026-06-25 — Sprint 2: Analysis Pipeline (Part 2)
 
 ### Added
