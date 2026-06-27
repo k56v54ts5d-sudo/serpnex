@@ -2,6 +2,17 @@
 
 ---
 
+## 2026-06-27 — ContentSignals: planned post-Sprint 3 enhancement documented
+
+### Added
+- `intelligence-architecture.md §3.1b` — ContentSignals future enhancement: planned extension to the existing summarization stage that adds structured content signals (subtopics covered/missing, entity coverage, depth, expert attribution, original data, structural completeness) alongside the current prose `PageSummary`. Documents design intent, schema sketch, downstream consumers, and implementation trigger (post-Sprint 3 verdict audit).
+- `decisions.md` — Decision entry: ContentSignals deferred to post-Sprint 3, with reasoning, alternatives considered, and implementation trigger.
+
+### Unchanged
+Current summarization implementation is unmodified. No code changes.
+
+---
+
 ## 2026-06-27 — IDE Implementation Design
 
 ### Added

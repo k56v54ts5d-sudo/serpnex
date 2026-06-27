@@ -4,6 +4,30 @@ This file records every significant architectural or product decision made durin
 
 ---
 
+## 2026-06-27 — ContentSignals: Deferred structured content extraction
+
+**Context:** The current summarization stage (§3.1a) returns a `PageSummary` with prose descriptions. When the Bottleneck worker identifies content depth as the primary constraint, it compares target and competitor summaries qualitatively — prose-to-prose — with no structured gap analysis. This is a real but bounded limitation: the dominant case (bottleneck is links) does not require structured content signals, and the pipeline produces accurate verdicts for that case.
+
+The alternative considered was introducing a `ContentSignals` object — structured extraction of subtopics covered, subtopics missing, entity coverage, content depth, expert attribution, original data presence, and structural completeness — extracted within the same Haiku summarization call (no new LLM call, no new pipeline stage).
+
+**Decision:** Do not implement `ContentSignals` before Sprint 3. Document it as a planned post-Sprint 3 enhancement in §3.1b of the architecture.
+
+**Reasoning:**
+1. The dominant Bottleneck case (links, not content) does not need structured signals to produce an accurate verdict.
+2. The IDE's Haiku call 1 already extracts structured float signals from prospect content in Sprint 3. After Sprint 3 ships, real verdicts will reveal which content signals actually drove the hard cases — that evidence is more valuable than pre-implementation assumptions for defining the schema.
+3. Locking a `ContentSignals` schema before observing production failure modes risks encoding the wrong signals. `subtopics_missing` depends on reliable "expected subtopics" inference across the full keyword range, which must be measured before being built.
+4. Implementation before Sprint 3 would require: new `PageSummary` schema, updated Bottleneck and Readiness prompts, new test coverage. That scope expansion is not justified until Sprint 3 validates the existing pipeline with real data.
+
+**Alternatives considered:**
+- Implement before Sprint 3 — rejected: premature schema lock-in, scope expansion without evidence
+- Skip entirely — rejected: the concern is valid; content signals do improve Bottleneck accuracy for content-constrained pages
+
+**Implementation trigger:** After Sprint 3, audit 20–30 Bottleneck verdicts where `primary_constraint = CONTENT_DEPTH`. Use those verdicts to finalize the `ContentSignals` schema before writing any code.
+
+**Impact:** No change to current implementation. §3.1b added to intelligence-architecture.md as a planned extension.
+
+---
+
 ## 2026-06-25 — Investment Decision Engine: Dual-Mode Architecture
 
 ### Decision: The IDE supports two evaluation modes, detected automatically from the input URL

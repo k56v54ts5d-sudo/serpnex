@@ -247,6 +247,61 @@ Progress steps emitted to SSE correspond to the "strategist thinking" UI experie
 
 **Latency:** ~3–5 seconds for 4 parallel Haiku calls. Runs in parallel (target + 3 competitors simultaneously). Added to the `SUMMARIZING_CONTENT` pipeline state which overlaps with backlink fetching in the queue.
 
+### 3.1b Future enhancement: ContentSignals (planned, post-Sprint 3)
+
+**Status:** Planned. Not implemented. Current summarization stage is unchanged.
+
+**Motivation:** The current `PageSummary` schema returns prose descriptions (topic, format, gaps as string lists). This is sufficient for qualitative Bottleneck reasoning but insufficient for structured gap analysis — particularly when the primary constraint is content depth. A prose-to-prose comparison between target and competitor summaries asks the LLM to infer differences that could instead be expressed as structured signals.
+
+**Design intent:** Extend the existing Haiku summarization call to return a `ContentSignals` object alongside the current `PageSummary`. This is not a new pipeline stage and does not add a new LLM call. The same Haiku call receives an extended tool schema and returns both the prose summary (unchanged) and structured signals in a single response.
+
+**Planned signals:**
+
+| Signal | Type | Notes |
+|---|---|---|
+| `subtopics_covered` | `list[str]` | Subtopics the page explicitly addresses, relevant to the target keyword |
+| `subtopics_missing` | `list[str]` | Subtopics expected for the keyword that the page omits |
+| `entity_coverage` | `list[str]` | Named brands, tools, people, and concepts referenced |
+| `depth` | `"shallow" \| "adequate" \| "deep"` | LLM-assessed content depth relative to the topic |
+| `has_original_data` | `bool` | Whether the page contains original research, proprietary statistics, or first-party studies |
+| `has_expert_attribution` | `bool` | Whether the page includes expert quotes, author credentials, or cited external expertise |
+| `structural_completeness` | `float` | 0–1; derivable deterministically from heading depth and count |
+
+**Schema sketch (not final — to be designed after Sprint 3 production data):**
+
+```python
+class ContentSignals(BaseModel):
+    subtopics_covered: list[str]
+    subtopics_missing: list[str]
+    entity_coverage: list[str]
+    depth: Literal["shallow", "adequate", "deep"]
+    has_original_data: bool
+    has_expert_attribution: bool
+    structural_completeness: float  # deterministic, not LLM-extracted
+
+class PageSummary(BaseModel):
+    # existing fields — unchanged
+    topic_and_angle: str
+    format_label: str
+    heading_structure: str
+    intent_alignment: str
+    notable_elements: list[str]
+    visible_content_gaps: list[str]
+    # new — added when ContentSignals is implemented
+    signals: ContentSignals | None = None
+```
+
+**Downstream consumers when implemented:**
+- **Bottleneck worker** — receives `target_signals` and `competitor_signals` as structured data; can compare `subtopics_missing` against competitor `subtopics_covered` directly rather than inferring gaps from prose
+- **IDE verdict assembly** — receives target page `ContentSignals` alongside prospect signals for direct comparison
+
+**Why post-Sprint 3, not now:**
+1. The dominant Bottleneck case (content adequate, bottleneck is links) does not require structured content signals.
+2. The IDE's Haiku call 1 already extracts structured float signals (P1, P2, D4) from prospect content in Sprint 3. After Sprint 3 ships, real verdicts will reveal which content signals drove the hardest cases — that evidence should define the `ContentSignals` schema, not pre-implementation assumptions.
+3. Locking a schema before observing production failure modes risks encoding the wrong signals. `subtopics_missing` is only useful if the LLM can define "expected subtopics" reliably for the full range of keywords in production. That reliability must be measured, not assumed.
+
+**Implementation trigger:** After Sprint 3, audit 20–30 Bottleneck verdicts where `primary_constraint = CONTENT_DEPTH`. Identify what structured information would have changed or confirmed the verdict. Use that audit to finalize the `ContentSignals` schema before writing any code.
+
 ### 3.2 Data collection phase (parallel)
 
 All data collection tasks run **in parallel** to minimize total analysis time. Target: data collection complete in under 30 seconds for a typical page.
