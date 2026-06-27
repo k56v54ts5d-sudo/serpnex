@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-06-27 — IDE Implementation Design
+
+### Added
+- `docs/ide-implementation-design.md` — Complete pre-Sprint-3 design for the Investment Decision Engine. Covers: 9-step execution flow, state machine (9 states), data flow between all 6 pipeline components, hard exclusion gate H1–H5 placement and logic, Mode A vs Mode B divergence and convergence points, full scoring formula (clusters + risk multiplier + editorial cap + outcome tiers), LLM/deterministic interaction invariant, failure handling per component, sequence diagrams for Mode A / Mode B / gate-triggered exit, migration 0003 schema, 8 new required files, and 8 documented risks with mitigations.
+
+### Status
+Awaiting user review and approval. No Sprint 3 code written.
+
+---
+
 ## 2026-06-27 — Sprint 2: Final closure
 
 ### Added

@@ -89,6 +89,24 @@ All remaining Sprint 2 work completed:
 
 ## In Progress
 
+### IDE Implementation Design (2026-06-27)
+
+`docs/ide-implementation-design.md` written and awaiting user approval. Covers:
+- Complete 9-step execution flow with state machine (queued → detecting_mode → inferring_section → collecting_data → classifying_signals → computing_score → assembling_verdict → complete / failed)
+- Exact processing order per mode (Mode A, Mode B/category, Mode B/domain)
+- Data flow diagram between all 6 components (collector, gates, LLM call 1, scorer, LLM call 2, validation)
+- Hard exclusion gates H1–H5 with evaluation order and trigger conditions
+- Mode A vs Mode B divergence (mode detection, section inference, crawl targets, prompt variation) and convergence (gates, scoring, LLM calls, validation)
+- Full scoring formula: Relevance, Authority, Quality clusters + Risk multiplier + editorial integrity cap + outcome tier thresholds
+- LLM signal extraction → deterministic scoring → LLM verdict assembly interaction (LLM cannot change the outcome tier)
+- Failure handling: per-component, `insufficient_data` vs `failed` distinction, retry protocol
+- Sequence diagrams for Mode A, Mode B/domain, and gate-triggered exit
+- Migration 0003: `opportunities` table schema
+- All new files required (8 pipeline files + migration + schemas + tests)
+- 8 risks documented with mitigations
+
+**Status: Awaiting review and approval. No Sprint 3 code written.**
+
 ---
 
 ## Completed (continued)
